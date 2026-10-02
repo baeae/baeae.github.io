@@ -528,6 +528,9 @@
                       rel="noopener"
                       >Code</a
                     >
+                    <a data-trouble="todo_list" href="#" target="_blank" rel="noopener"
+                      >Trouble</a
+                    >
                   </span>
                 </div>
               </li>
@@ -552,6 +555,9 @@
                       rel="noopener"
                       >Code</a
                     >
+                    <a data-trouble="fruits_shop_temp" href="#" target="_blank" rel="noopener"
+                      >Trouble</a
+                    >
                   </span>
                 </div>
               </li>
@@ -571,6 +577,9 @@
                     <a href="./movie/index.html">Live ↗</a>
                     <a data-code="movie" href="#" target="_blank" rel="noopener"
                       >Code</a
+                    >
+                    <a data-trouble="movie" href="#" target="_blank" rel="noopener"
+                      >Trouble</a
                     >
                   </span>
                 </div>
@@ -595,6 +604,9 @@
                       target="_blank"
                       rel="noopener"
                       >Code</a
+                    >
+                    <a data-trouble="kost_bank" href="#" target="_blank" rel="noopener"
+                      >Trouble</a
                     >
                   </span>
                 </div>
@@ -651,7 +663,7 @@
                 ><span class="when">2018.11 – 2019.04</span>
               </li>
               <li>
-                <b>[회사명]</b><span>[주임] · </span
+                <b>[엔켐]</b><span>[주임] · </span
                 ><span class="when">2022.09 – 2026.04</span>
               </li>
             </ul>
@@ -715,7 +727,7 @@
     </main>
 
     <script>
-      // ▼ GitHub 아이디/저장소 이름만 바꾸면 GitHub·Code 링크가 연결
+      // ▼ GitHub 아이디/저장소 이름만 바꾸면 GitHub·Code·Trouble 링크가 연결
       const GITHUB_USER = "baeae";
       const REPO = "baeae.github.io";
 
@@ -724,6 +736,10 @@
       gh.textContent = `github.com/${GITHUB_USER}`;
       document.querySelectorAll("[data-code]").forEach((a) => {
         a.href = `https://github.com/${GITHUB_USER}/${REPO}/tree/main/${a.dataset.code}`;
+      });
+      // 프로젝트 폴더의 TROUBLESHOOTING.md 를 GitHub에서 열기
+      document.querySelectorAll("[data-trouble]").forEach((a) => {
+        a.href = `https://github.com/${GITHUB_USER}/${REPO}/blob/main/${a.dataset.trouble}/TROUBLESHOOTING.md`;
       });
 
       // 방 안에 아래로 더 볼 내용이 있을 때만 흐림 효과 표시 (끝까지 내리면 사라짐)
