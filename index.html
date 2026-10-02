@@ -114,7 +114,8 @@
         flex: 1 1 auto;
         height: 0; /* 내용 길이가 방 크기를 늘리지 않도록 */
         overflow-y: auto;
-        overscroll-behavior: contain;
+        /* overscroll-behavior: contain 은 쓰지 않음 →
+           방 안 스크롤이 없거나 끝까지 내려가면 페이지 전체가 이어서 스크롤됨 */
         scrollbar-width: none;
       }
       .room-body::-webkit-scrollbar {
