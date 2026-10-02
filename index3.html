@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Geumbae · Floor Plan</title>
+    <meta
+      name="description"
+      content="Geumbae — 프론트엔드 개발자 포트폴리오 평면도"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ───────── 색상 토큰 (밝은 도면 용지) ───────── */
+      :root {
+        --paper: #fbfcfd;
+        --grid: #edf1f5;
+        --ink: #2b3440;
+        --muted: #8792a0;
+        --wall: #2b3440;
+        --thin: #c9d2dc;
+        --accent: #c8553d; /* 문 · 현재 진행 표시 */
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        background-color: var(--paper);
+        background-image:
+          linear-gradient(var(--grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+        background-size: 24px 24px;
+        color: var(--ink);
+        font-family:
+          "Pretendard",
+          -apple-system,
+          system-ui,
+          sans-serif;
+        line-height: 1.5;
+        padding: 40px 24px;
+      }
+      a {
+        color: inherit;
+      }
+      .mono {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+      .sheet {
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+
+      /* ───────── 치수선 ───────── */
+      .dim {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .dim::before,
+      .dim::after {
+        content: "";
+        flex: 1;
+        height: 9px;
+        border-top: 1px solid var(--thin);
+        border-left: 1px solid var(--muted);
+        transform: translateY(4px);
+      }
+      .dim::after {
+        border-left: 0;
+        border-right: 1px solid var(--muted);
+      }
+
+      /* ───────── 평면도 ───────── */
+      .plan {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: 330px 230px 190px; /* 방 높이 고정 */
+        grid-template-areas:
+          "info   info   info   proj proj proj"
+          "skill  skill  lang   proj proj proj"
+          "career career edu    edu  cert cert";
+        border: 5px solid var(--wall);
+        background: var(--paper);
+      }
+      .room {
+        position: relative;
+        padding: 22px 24px 28px;
+        outline: 1.5px solid var(--wall); /* 내벽 */
+        min-width: 0;
+      }
+      /* 방 크기는 고정, 내용이 넘치면 방 안에서 스크롤 (스크롤바는 숨김) */
+      .room {
+        display: flex;
+        flex-direction: column;
+      }
+      .room-body {
+        flex: 1 1 auto;
+        height: 0; /* 내용 길이가 방 크기를 늘리지 않도록 */
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+      }
+      .room-body::-webkit-scrollbar {
+        display: none;
+      }
+      /* 아래에 내용이 더 있으면 아래쪽을 흐리게 (JS가 클래스를 붙임) */
+      .room-body.more {
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          #000 calc(100% - 40px),
+          transparent
+        );
+        mask-image: linear-gradient(
+          to bottom,
+          #000 calc(100% - 40px),
+          transparent
+        );
+      }
+      .room-tag {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      .room-tag b {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        /* 제목 아래 형광펜 밑줄 */
+        background: linear-gradient(
+          transparent 60%,
+          color-mix(in srgb, var(--c) 22%, transparent) 60%
+        );
+      }
+      .room-tag span {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--c);
+      }
+      .room-tag i {
+        margin-left: auto;
+        font-style: normal;
+        font-size: 10.5px;
+        color: var(--muted);
+      }
+
+      /* 문 (호 + 문짝) */
+      .door::after {
+        content: "";
+        position: absolute;
+        width: 26px;
+        height: 26px;
+        border-left: 1.5px solid var(--accent);
+        border-top: 1px dashed var(--accent);
+        border-top-right-radius: 100%;
+        opacity: 0.7;
+      }
+      .door.bl::after {
+        left: 14px;
+        bottom: 0;
+      }
+      .door.br::after {
+        right: 14px;
+        bottom: 0;
+        transform: scaleX(-1);
+      }
+
+      /* 방마다 글씨 포인트 색 (--c) */
+      .info {
+        grid-area: info;
+        --c: #d9825b;
+      }
+      .proj {
+        grid-area: proj;
+        --c: #3f9a74;
+      }
+      .skill {
+        grid-area: skill;
+        --c: #7a6cc4;
+      }
+      .lang {
+        grid-area: lang;
+        --c: #b88a1c;
+      }
+      .career {
+        grid-area: career;
+        --c: #4a86c5;
+      }
+      .edu {
+        grid-area: edu;
+        --c: #c56a8c;
+      }
+      .cert {
+        grid-area: cert;
+        --c: #6f9a45;
+      }
+
+      /* 내 정보 */
+      .info h1 {
+        font-size: clamp(32px, 4.4vw, 46px);
+        font-weight: 800;
+        letter-spacing: -1.4px;
+        line-height: 1.05;
+      }
+      .info .role {
+        font-size: 15px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .info .intro {
+        font-size: 15.5px;
+        margin-top: 16px;
+        max-width: 46ch;
+        color: #444d59;
+      }
+      .kv {
+        list-style: none;
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 20px;
+        font-size: 14px;
+      }
+      .kv li {
+        display: flex;
+        gap: 10px;
+        border-bottom: 1px dashed var(--thin);
+        padding-bottom: 6px;
+        min-width: 0;
+      }
+      .kv span {
+        color: var(--muted);
+        font-size: 12px;
+        width: 48px;
+        flex-shrink: 0;
+        padding-top: 2px;
+      }
+      .kv a {
+        text-decoration: none;
+        overflow-wrap: anywhere;
+      }
+      .kv a:hover {
+        text-decoration: underline;
+      }
+
+      /* 프로젝트 */
+      .pj-list {
+        list-style: none;
+      }
+      .pj-list li {
+        display: grid;
+        grid-template-columns: 30px 1fr auto;
+        gap: 4px 12px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--thin);
+      }
+      .pj-list li:first-child {
+        padding-top: 0;
+      }
+      .pj-list li:last-child {
+        border-bottom: 0;
+      }
+      .pj-no {
+        font-size: 12px;
+        color: var(--muted);
+        padding-top: 3px;
+      }
+      .pj-name {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      .pj-name small {
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--muted);
+        margin-left: 6px;
+      }
+      .pj-desc {
+        grid-column: 2 / -1;
+        font-size: 14px;
+        color: #4f5966;
+      }
+      .pj-meta {
+        grid-column: 2 / -1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+      .pj-stack {
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+      .pj-links {
+        display: flex;
+        gap: 12px;
+        font-size: 13px;
+      }
+      .pj-links a {
+        text-decoration: none;
+        border-bottom: 1px solid var(--thin);
+      }
+      .pj-links a:hover {
+        border-color: var(--c);
+        color: var(--c);
+      }
+      .status {
+        font-size: 11px;
+        color: var(--muted);
+        padding-top: 4px;
+        white-space: nowrap;
+      }
+      .status.now {
+        color: var(--c);
+        font-weight: 600;
+      }
+      .status.now::before {
+        content: "● ";
+      }
+      li.planned .pj-name,
+      li.planned .pj-desc {
+        color: var(--muted);
+      }
+
+      /* 스킬 : 둥근 박스(칩) */
+      .skills {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .skills li {
+        font-size: 12px;
+        padding: 3px 10px;
+        border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+        background: color-mix(in srgb, var(--c) 8%, transparent);
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      /* 학습 중인 스킬은 점선 박스 */
+      .skills li.learning {
+        color: var(--muted);
+        border-style: dashed;
+        border-color: var(--muted);
+        background: none;
+      }
+
+      /* 언어 · 경력 · 교육 · 자격증 공통 목록 */
+      .rows {
+        list-style: none;
+        display: grid;
+        gap: 12px;
+      }
+      .rows li {
+        font-size: 14px;
+      }
+      .rows b {
+        display: block;
+        font-weight: 600;
+      }
+      .rows span {
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+      .rows .when {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 11.5px;
+      }
+
+      /* ───────── 표제란 ───────── */
+      .title-block {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+        border: 1.5px solid var(--wall);
+        border-top: 0;
+        background: var(--paper);
+        font-size: 13px;
+      }
+      .title-block div {
+        padding: 10px 14px;
+        border-right: 1px solid var(--thin);
+        min-width: 0;
+      }
+      .title-block div:last-child {
+        border-right: 0;
+      }
+      .title-block small {
+        display: block;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+      .title-block b {
+        font-weight: 600;
+      }
+
+      /* ───────── 반응형 ───────── */
+      @media (max-width: 980px) {
+        .plan {
+          grid-template-columns: 1fr 1fr;
+          grid-template-areas:
+            "info   info"
+            "proj   proj"
+            "skill  lang"
+            "career edu"
+            "cert   cert";
+        }
+        /* 좁은 화면: 방마다 최대 높이까지만 늘어나고 그 이상은 스크롤 */
+        .plan {
+          grid-template-rows: none;
+        }
+        .room-body {
+          flex: none;
+          height: auto;
+          max-height: 300px;
+        }
+        .proj .room-body {
+          max-height: 420px;
+        }
+      }
+      @media (max-width: 640px) {
+        body {
+          padding: 20px 16px;
+        }
+        .plan {
+          border-width: 4px;
+          grid-template-columns: 1fr;
+          grid-template-areas: "info" "proj" "skill" "lang" "career" "edu" "cert";
+        }
+        .room {
+          padding: 18px 16px 26px;
+        }
+        .kv {
+          grid-template-columns: 1fr;
+        }
+        .title-block {
+          grid-template-columns: 1fr 1fr;
+        }
+        .title-block div {
+          border-bottom: 1px solid var(--thin);
+        }
+        .title-block div:first-child {
+          grid-column: 1 / -1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="sheet">
+      <div class="dim mono">PORTFOLIO · 1 : 1</div>
+
+      <div class="plan">
+        <!-- R01 내 정보 -->
+        <section class="room info door bl">
+          <div class="room-tag">
+            <span class="mono">R01</span><b>내 정보</b><i class="mono">ABOUT</i>
+          </div>
+          <div class="room-body">
+            <h1>Geumbae</h1>
+            <p class="role">개발자</p>
+            <p class="intro">
+              직접 만든 화면이 누군가에게 바로 이해되는 순간을 좋아합니다. 작게
+              만들고, 써보고, 고치는 과정을 반복하며 배우고 있어요.
+            </p>
+            <!-- ✏️ 본인 정보로 바꿔주세요 -->
+            <ul class="kv">
+              <li>
+                <span>이메일</span
+                ><a href="mailto:dlrmaqo1@gmail.com">dlrmaqo1@gmail.com</a>
+              </li>
+              <li>
+                <span>GitHub</span
+                ><a id="gh-link" href="#" target="_blank" rel="noopener"
+                  >github.com/…</a
+                >
+              </li>
+              <li><span>지역</span>경기도 오산시</li>
+              <li><span>상태</span>구직 중</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- R02 내 프로젝트 -->
+        <section class="room proj door br">
+          <div class="room-tag">
+            <span class="mono">R02</span><b>내 프로젝트</b
+            ><i class="mono">PROJECTS</i>
+          </div>
+          <div class="room-body">
+            <ol class="pj-list">
+              <li>
+                <span class="pj-no mono">01</span>
+                <span class="pj-name">Todo List<small>할 일 관리</small></span>
+                <span class="status now mono">최근</span>
+                <p class="pj-desc">
+                  오늘 날짜 표시, 할 일 추가·완료·삭제, 키워드 검색까지. 바닐라
+                  JS로 DOM을 직접 다뤄본 프로젝트.
+                </p>
+                <div class="pj-meta">
+                  <span class="pj-stack mono">HTML · CSS · JavaScript</span>
+                  <span class="pj-links">
+                    <a href="./todo_list/index.html">Live ↗</a>
+                    <a
+                      data-code="todo_list"
+                      href="#"
+                      target="_blank"
+                      rel="noopener"
+                      >Code</a
+                    >
+                  </span>
+                </div>
+              </li>
+              <li>
+                <span class="pj-no mono">02</span>
+                <span class="pj-name"
+                  >Fruits Shop<small>과일 쇼핑몰</small></span
+                >
+                <span class="status now mono">최근</span>
+                <p class="pj-desc">
+                  상품 목록, 이름·가격 정렬, 검색, 상세 페이지. Bootstrap
+                  레이아웃 위에 데이터 렌더링을 구현.
+                </p>
+                <div class="pj-meta">
+                  <span class="pj-stack mono">JavaScript · Bootstrap</span>
+                  <span class="pj-links">
+                    <a href="./fruits_shop_temp/index.html">Live ↗</a>
+                    <a
+                      data-code="fruits_shop_temp"
+                      href="#"
+                      target="_blank"
+                      rel="noopener"
+                      >Code</a
+                    >
+                  </span>
+                </div>
+              </li>
+              <li>
+                <span class="pj-no mono">03</span>
+                <span class="pj-name"
+                  >KOSTA Movie<small>힐링 영화관</small></span
+                >
+                <span class="status mono">완료</span>
+                <p class="pj-desc">
+                  영화 예고편 미리보기(video), 찜하기·찜 목록을 localStorage로
+                  저장. HTML5 미디어와 Web Storage를 다뤄본 프로젝트.
+                </p>
+                <div class="pj-meta">
+                  <span class="pj-stack mono">HTML5 · CSS · JavaScript</span>
+                  <span class="pj-links">
+                    <a href="./movie/index.html">Live ↗</a>
+                    <a data-code="movie" href="#" target="_blank" rel="noopener"
+                      >Code</a
+                    >
+                  </span>
+                </div>
+              </li>
+              <li>
+                <span class="pj-no mono">04</span>
+                <span class="pj-name"
+                  >IT's KOSTA<small>은행 웹사이트</small></span
+                >
+                <span class="status mono">완료</span>
+                <p class="pj-desc">
+                  메인 · 개인 · 기업 · 로그인 · 회원가입 페이지. CSS Grid
+                  레이아웃과 공통 내비게이션 · 푸터로 여러 페이지를 구성.
+                </p>
+                <div class="pj-meta">
+                  <span class="pj-stack mono">HTML · CSS · JavaScript</span>
+                  <span class="pj-links">
+                    <a href="./kost_bank/index.html">Live ↗</a>
+                    <a
+                      data-code="kost_bank"
+                      href="#"
+                      target="_blank"
+                      rel="noopener"
+                      >Code</a
+                    >
+                  </span>
+                </div>
+              </li>
+              <li class="planned">
+                <span class="pj-no mono">05</span>
+                <span class="pj-name">다음 프로젝트<small>React</small></span>
+                <span class="status mono">설계 중</span>
+                <p class="pj-desc">React로 다음 프로젝트를 준비하고 있어요.</p>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <!-- R03 스킬 : <li>스킬명</li> 한 줄씩 추가하면 됩니다 (학습 중이면 class="learning") -->
+        <section class="room skill">
+          <div class="room-tag">
+            <span class="mono">R03</span><b>스킬</b><i class="mono">SKILLS</i>
+          </div>
+          <div class="room-body">
+            <ul class="skills">
+              <li>HTML</li>
+              <li>CSS</li>
+              <li>JavaScript</li>
+              <li>Bootstrap</li>
+              <li class="learning">React · 학습 중</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- R04 언어 -->
+        <section class="room lang">
+          <div class="room-tag">
+            <span class="mono">R04</span><b>어학</b><i class="mono">LANG</i>
+          </div>
+          <div class="room-body">
+            <!-- ✏️ 본인 정보로 바꿔주세요 -->
+            <ul class="rows">
+              <li><b>영어</b><span></span></li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- R05 경력 -->
+        <section class="room career door bl">
+          <div class="room-tag">
+            <span class="mono">R05</span><b>경력</b><i class="mono">CAREER</i>
+          </div>
+          <div class="room-body">
+            <!-- ✏️ 본인 정보로 바꿔주세요 (신입이면 '신입 · 첫 직장을 찾고 있어요' 한 줄로) -->
+            <ul class="rows">
+              <li>
+                <b>[델리치푸드]</b><span>[사원] · </span
+                ><span class="when">2018.11 – 2019.04</span>
+              </li>
+              <li>
+                <b>[회사명]</b><span>[주임] · </span
+                ><span class="when">2022.09 – 2026.04</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- R06 교육 -->
+        <section class="room edu">
+          <div class="room-tag">
+            <span class="mono">R06</span><b>교육</b
+            ><i class="mono">EDUCATION</i>
+          </div>
+          <div class="room-body">
+            <!-- ✏️ 본인 정보로 바꿔주세요 -->
+            <ul class="rows">
+              <li>
+                <b>[KOSTA] AI를 활용한 JAVA 기반 DevOps </b>
+                <b>개발자 양성과정</b>
+                <span>JAVA · Spring · HTML · CSS · JavaScript · React · </span
+                ><span class="when">2026.09 – 2026.12</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- R07 자격증 -->
+        <section class="room cert">
+          <div class="room-tag">
+            <span class="mono">R07</span><b>자격증</b><i class="mono">CERT</i>
+          </div>
+          <div class="room-body">
+            <!-- ✏️ 본인 정보로 바꿔주세요 -->
+            <ul class="rows">
+              <li>
+                <b>[자격증명]</b><span>[발급기관] · </span
+                ><span class="when">2000.00</span>
+              </li>
+              <li>
+                <b>[자격증명]</b><span>[발급기관] · </span
+                ><span class="when">2000.00</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <!-- 도면 표제란 -->
+      <footer class="title-block">
+        <div>
+          <small class="mono">도면명</small><b>Geumbae 포트폴리오 평면도</b>
+        </div>
+        <div><small class="mono">작성</small><b>Geumbae</b></div>
+        <div>
+          <small class="mono">일자</small><b class="mono" id="date"></b>
+        </div>
+        <div><small class="mono">축척</small><b class="mono">1 : 1</b></div>
+        <div>
+          <small class="mono">도면번호</small><b class="mono">FE-001</b>
+        </div>
+      </footer>
+    </main>
+
+    <script>
+      // ▼ GitHub 아이디/저장소 이름만 바꾸면 GitHub·Code 링크가 전부 연결됩니다.
+      const GITHUB_USER = "baeae";
+      const REPO = "baeae.github.io";
+
+      const gh = document.getElementById("gh-link");
+      gh.href = `https://github.com/${GITHUB_USER}`;
+      gh.textContent = `github.com/${GITHUB_USER}`;
+      document.querySelectorAll("[data-code]").forEach((a) => {
+        a.href = `https://github.com/${GITHUB_USER}/${REPO}/tree/main/${a.dataset.code}`;
+      });
+
+      // 방 안에 아래로 더 볼 내용이 있을 때만 흐림 효과 표시 (끝까지 내리면 사라짐)
+      const updateFade = (body) => {
+        const left = body.scrollHeight - body.scrollTop - body.clientHeight;
+        body.classList.toggle("more", left > 2);
+      };
+      const bodies = document.querySelectorAll(".room-body");
+      bodies.forEach((body) => {
+        updateFade(body);
+        body.addEventListener("scroll", () => updateFade(body), {
+          passive: true,
+        });
+      });
+      window.addEventListener("resize", () => bodies.forEach(updateFade));
+      document.fonts?.ready.then(() => bodies.forEach(updateFade));
+
+      const d = new Date();
+      document.getElementById("date").textContent =
+        `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+    </script>
+  </body>
+</html>
